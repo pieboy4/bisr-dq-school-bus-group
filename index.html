@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#202e42" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="BISR Bus" />
+  <title>BISR DQ School Bus Group</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="brand-header">
+      <div class="brand-logo bisr-wrap">
+        <img src="assets/bisr-logo.png" alt="British International School Riyadh" />
+      </div>
+      <div class="brand-copy">
+        <div class="eyebrow">Diplomatic Quarter</div>
+        <h1>BISR DQ School Bus Group</h1>
+      </div>
+      <div class="brand-logo azure-wrap">
+        <img src="assets/azure-logo.svg" alt="Azure Live Beyond" />
+      </div>
+    </header>
+
+    <main>
+      <section class="top-holiday-banner" id="topHolidayBanner" hidden role="status" aria-live="polite">
+        <div class="holiday-mark">★</div>
+        <div class="holiday-copy">
+          <span>PUBLIC HOLIDAY</span>
+          <strong id="topHolidayName">Saudi National Day</strong>
+          <small>No school • No bus service</small>
+        </div>
+      </section>
+
+      <section class="date-panel" id="datePanel" aria-label="Date navigation">
+        <div class="date-title-row">
+          <button class="nav-arrow" id="prevDay" aria-label="Previous day">‹</button>
+          <div class="date-title">
+            <span class="date-status" id="dateStatus">TODAY</span>
+            <strong id="fullDate"></strong>
+          </div>
+          <button class="nav-arrow" id="nextDay" aria-label="Next day">›</button>
+        </div>
+        <div class="week-strip" id="weekStrip"></div>
+        <div class="range-note">Swipe days • 4 weeks back • 1 week ahead</div>
+      </section>
+
+      <section class="poll-panel" id="pollPanel">
+        <div class="poll-topline">
+          <div>
+            <div class="section-kicker">DAILY BUS POLL</div>
+            <h2>Who is travelling?</h2>
+          </div>
+          <div class="answered-pill" id="answeredPill">0/5 complete</div>
+        </div>
+
+        <div class="closed-day-banner" id="closedDayBanner" hidden>
+          <div class="closed-day-icon">×</div>
+          <div>
+            <strong id="closedDayTitle">No school bus service</strong>
+            <span id="closedDayReason">Weekend</span>
+          </div>
+        </div>
+
+        <div class="journey-headings">
+          <div class="child-heading">Child</div>
+          <div class="journey-heading"><span>Morning</span><strong>07:25</strong></div>
+          <div class="journey-heading"><span>Afternoon</span><strong>14:10</strong></div>
+        </div>
+
+        <div class="children-list" id="childrenList"></div>
+
+        <div class="management-row">
+          <button class="manage-button primary" id="addChildBtn">＋ Add new child</button>
+          <button class="manage-button secondary" id="removeChildBtn">− Remove child</button>
+        </div>
+      </section>
+
+      <div class="legend" aria-label="Voting legend">
+        <span><i class="legend-dot yes"></i>Yes</span>
+        <span><i class="legend-dot no"></i>No</span>
+        <span><i class="legend-dot waiting"></i>Not answered</span>
+      </div>
+
+      <div class="save-bar" id="saveBar">
+        <span class="save-dot"></span>
+        <span id="saveText">Ready</span>
+      </div>
+    </main>
+  </div>
+
+  <dialog id="addDialog">
+    <form method="dialog" id="addForm">
+      <div class="dialog-kicker">CHILD LIST</div>
+      <h3>Add new child</h3>
+      <p>New children are automatically placed in Villa-number order.</p>
+      <label>
+        Child's name
+        <input id="childName" maxlength="60" autocomplete="off" placeholder="e.g. Oliver Smith" required />
+      </label>
+      <label>
+        Villa number
+        <input id="villaNumber" inputmode="numeric" pattern="[0-9]*" min="1" max="9999" placeholder="e.g. 62" required />
+      </label>
+      <div class="dialog-actions">
+        <button value="cancel" class="dialog-button cancel">Cancel</button>
+        <button type="button" class="dialog-button confirm" id="confirmAdd">Add child</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="removeDialog">
+    <form method="dialog">
+      <div class="dialog-kicker">CHILD LIST</div>
+      <h3>Remove child</h3>
+      <p>The child disappears from today onward; previous bus records remain available.</p>
+      <label>
+        Select child
+        <select id="removeSelect"></select>
+      </label>
+      <div class="dialog-actions">
+        <button value="cancel" class="dialog-button cancel">Cancel</button>
+        <button type="button" class="dialog-button remove" id="confirmRemove">Remove child</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

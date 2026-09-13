@@ -1,0 +1,13 @@
+{
+  "name": "BISR DQ School Bus Group",
+  "short_name": "BISR Bus",
+  "description": "Shared morning and afternoon school bus poll for the BISR DQ group.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f5f8",
+  "theme_color": "#202e42",
+  "icons": [
+    { "src": "assets/app-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
