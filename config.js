@@ -1,11 +1,12 @@
-// BISR DQ School Bus Group - V1.1 configuration
-// Paste the values from Supabase's Connect dialog, then change DEMO_MODE to false.
+// BISR DQ School Bus Group - V1.3 configuration
+// LIVE SETUP: paste the values from Supabase's Connect dialog. If the URL/key are blank, the app safely falls back to Demo Mode.
 window.BUS_APP_CONFIG = {
   SUPABASE_URL: '',
   SUPABASE_PUBLISHABLE_KEY: '',
-  DEMO_MODE: true,
+  DEMO_MODE: false,
   TIME_ZONE: 'Asia/Riyadh',
-  MORNING_TIME: '07:25',
+  MORNING_TIME_SUN_WED: '06:35',
+  MORNING_TIME_THURSDAY: '07:25',
   AFTERNOON_TIME: '14:10',
   PAST_DAYS: 28,
   FUTURE_DAYS: 7

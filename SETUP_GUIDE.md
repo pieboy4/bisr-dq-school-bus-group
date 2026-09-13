@@ -1,272 +1,248 @@
-# BISR DQ School Bus Group V1.2 - Complete setup guide
+# BISR DQ School Bus Group V1.3 — Step-by-step live setup
 
-## What has changed in V1.2
-V1.2 keeps the agreed mobile layout and adds the BISR DQ school calendar. The app now:
+## What V1.3 fixes
 
-- defaults to the current **Riyadh** date;
-- swipes left/right **one day at a time**;
-- permits viewing **28 days back and 7 days ahead**;
-- automatically greys **Friday and Saturday**;
-- automatically greys published **BISR DQ school holidays**;
-- shows the closure reason, e.g. `Weekend`, `Half Term`, or `Saudi National Day`;
-- disables YES/NO voting on a closed day;
-- keeps closed dates visible so the calendar still moves day by day;
-- stores calendar dates in Supabase, so the owner can amend a holiday without rebuilding GitHub files.
+1. **Morning pickup time**
+   - Sunday: 06:35
+   - Monday: 06:35
+   - Tuesday: 06:35
+   - Wednesday: 06:35
+   - Thursday: 07:25
+   - Afternoon remains 14:10.
 
-The current five children remain sorted numerically by Villa: **49, 49, 75, 94, 97**. Any child added later is automatically inserted into Villa-number order.
+2. **Shared voting instead of Demo Mode**
+   - Demo Mode stores data only on the phone/browser that made the change.
+   - Live Mode uses Supabase, so every parent using the GitHub Pages link sees the same children and votes.
+
+3. **Logos**
+   - The exact BISR logo supplied by the group and the supplied Azure logo are now embedded inside the page itself.
+   - This removes the broken-image problem even if GitHub folder uploads are mishandled.
+
+4. **Header wording**
+   - `DIPLOMATIC QUARTER` is replaced with `La Palma II Parents Group`.
+
+5. **Navigation**
+   - Swiping left/right changes **week**.
+   - The seven dates in the current week remain tappable.
+   - Parent view: 28 days back and 7 days ahead only.
+
+6. **Database retention**
+   - Supabase keeps historic `bus_votes` rows indefinitely unless you deliberately delete them.
+   - The app only downloads/displays the rolling 4-week-back/1-week-ahead window.
 
 ---
 
-# 1. Download and test the app first
+# PART A — Replace your current GitHub files with V1.3
 
-1. Unzip `BISR_DQ_School_Bus_Group_V1_1.zip`.
-2. Open the extracted folder.
-3. Double-click `index.html`.
-4. It opens in **Demo Mode**. Demo votes are stored only in that browser.
-5. Check the current day, swipe left/right, and navigate to a Friday or Saturday.
-6. Friday/Saturday should be grey and the poll should say **No school bus service - Weekend**.
-7. Test `Add new child`; enter a child in Villa 62. The order should become `49, 49, 62, 75, 94, 97`.
-8. Remove the test child.
+If you already have the GitHub repository, use this section. If you have not created it yet, jump to Part D after setting up Supabase.
+
+1. Download and unzip `BISR_DQ_School_Bus_Group_V1_3.zip`.
+2. Open your GitHub repository: `bisr-dq-school-bus-group`.
+3. Replace the old app files with the V1.3 files. The important files are:
+   - `index.html`
+   - `styles.css`
+   - `app.js`
+   - `config.js`
+   - `manifest.webmanifest`
+   - `sw.js`
+   - `.nojekyll`
+   - `assets/` folder
+4. Keep `supabase.sql` locally until Part B; it does not need to be executed by GitHub.
+5. Commit the changes, for example: `BISR Bus V1.3`.
+
+Do not test shared voting yet if `config.js` still contains blank Supabase values; the page will correctly say **Demo mode - local device only** until Part C is completed.
 
 ---
 
-# 2. Create the Supabase project
+# PART B — Create the shared Supabase database
 
-1. Go to **supabase.com** and sign in.
+If you already created the Supabase database using V1.1/V1.2 `supabase.sql`, you do not need to recreate it. Go to Part C.
+
+For a fresh setup:
+
+1. Go to Supabase and sign in.
 2. Select **New project**.
 3. Project name: `bisr-dq-school-bus-group`.
-4. Create and retain a strong database password.
-5. Select a region reasonably close to Saudi Arabia.
-6. Wait for the project to finish provisioning.
+4. Create a strong database password and keep it somewhere safe.
+5. Choose a suitable region and create the project.
+6. Wait until the project reports that it is ready.
+7. In Supabase, open **SQL Editor**.
+8. Select **New query**.
+9. On your computer, open the supplied `supabase.sql`.
+10. Copy the entire contents.
+11. Paste it into the Supabase SQL Editor.
+12. Press **Run**.
+13. Confirm there are no SQL errors.
 
-### Fresh installation
-1. Open **SQL Editor** in Supabase.
-2. Select **New query**.
-3. Open the supplied `supabase.sql` file on your computer.
-4. Copy the entire file into the SQL editor.
-5. Press **Run**.
-
-This creates:
+The script creates:
 - `children`
 - `bus_votes`
 - `school_years`
 - `school_closures`
-- the safe voting/add/remove database functions
-- Row Level Security read rules
-- Realtime subscriptions
+- voting/add/remove database functions
+- Row Level Security policies
+- Realtime publication entries
 - the five initial children
-- BISR DQ 2026-27 school-year and holiday dates
+- the published BISR closure calendar
 
-### If you already installed the earlier V1 database
-Do **not** start again. Run `supabase_calendar_upgrade.sql` instead. This only adds the new school-calendar tables/data.
+### Verify the children
+Open **Table Editor > children** and confirm:
+- Villa 49 — Maria Alejandra
+- Villa 49 — Nicolas Cortes
+- Villa 75 — Enie Rüscher
+- Villa 94 — Poppy Yap
+- Villa 97 — Amelia Hannesdottir
 
----
-
-# 3. Verify the BISR calendar in Supabase
-
-Open **Table Editor**.
-
-In `school_years`, check:
-- 2026-2027 — 26-Aug-2026 to 03-Jul-2027
-
-In `school_closures`, check:
-- 23-Sep-2026 — Saudi National Day
-- 25-Oct-2026 to 29-Oct-2026 — Half Term
-- 13-Dec-2026 to 31-Dec-2026 — Winter Break
-- 22-Feb-2027 — Saudi Foundation Day
-- 07-Mar-2027 to 11-Mar-2027 — Eid al-Fitr
-- 28-Mar-2027 to 08-Apr-2027 — Spring Break
-- 16-May-2027 to 20-May-2027 — Eid al-Adha
-- 04-Jul-2027 — Summer Break begins
-
-Friday and Saturday are calculated automatically by the app and are not stored as hundreds of database rows.
-
-If BISR later changes a holiday date, edit the corresponding row in `school_closures`. Parent phones receive the change through Supabase Realtime; GitHub does not need to be rebuilt.
+### Verify historical storage
+Open **Table Editor > bus_votes**. This table has no automatic 28-day deletion rule. Votes remain in the database even after those dates disappear from the parents' 4-week viewing window.
 
 ---
 
-# 4. Connect the app to Supabase
+# PART C — Turn off Demo Mode and connect the shared database
 
-1. In Supabase open **Connect** (or Project Settings/API if shown in your interface).
-2. Copy the **Project URL**.
-3. Copy the **Publishable key**. Do not use a service-role or secret key in the app.
-4. Open `config.js` in Notepad.
-5. Change:
+The screenshot showing **Demo mode - local device only** means the website is not yet connected to Supabase.
 
-```js
+1. In Supabase, open your project's **Connect** dialog (or **Settings > API Keys**).
+2. Copy the **Project URL**. It will look similar to:
+   `https://abcdefghijk.supabase.co`
+3. Copy the **Publishable key** beginning with something similar to:
+   `sb_publishable_...`
+4. Do **not** use a secret key or `service_role` key in this app.
+5. Open `config.js` in your GitHub repository.
+6. Replace:
+
+```javascript
 SUPABASE_URL: '',
 SUPABASE_PUBLISHABLE_KEY: '',
-DEMO_MODE: true,
 ```
 
-to:
+with your own values, for example:
 
-```js
-SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
-SUPABASE_PUBLISHABLE_KEY: 'YOUR_PUBLISHABLE_KEY',
+```javascript
+SUPABASE_URL: 'https://abcdefghijk.supabase.co',
+SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_XXXXXXXXXXXXXXXX',
+```
+
+7. Leave:
+
+```javascript
 DEMO_MODE: false,
 ```
 
-6. Save `config.js`.
+8. Commit the edited `config.js`.
+
+The publishable key is designed for browser/mobile client code. Database access is controlled by Supabase permissions and Row Level Security. Never put a secret/service-role key in GitHub or in browser code.
 
 ---
 
-# 5. Create the GitHub repository
+# PART D — Publish through GitHub Pages
+
+For a new repository:
 
 1. Sign in to GitHub.
 2. Select **New repository**.
-3. Repository name: `bisr-dq-school-bus-group`.
+3. Name it `bisr-dq-school-bus-group`.
 4. Create the repository.
-5. Choose **Add file > Upload files**.
-6. Upload the contents of this folder, preserving the `assets` directory:
+5. Select **Add file > Upload files**.
+6. Upload the contents of the V1.3 folder, preserving the folder structure.
+7. Commit the upload.
+8. Open **Settings** in the repository.
+9. Select **Pages**.
+10. Under **Build and deployment**, choose **Deploy from a branch**.
+11. Branch: `main`.
+12. Folder: `/ (root)`.
+13. Save.
+14. Wait for GitHub Pages to publish the site.
+15. GitHub will provide a URL similar to:
+    `https://YOUR-USERNAME.github.io/bisr-dq-school-bus-group/`
 
-```text
-assets/
-  app-icon.svg
-  azure-logo.svg
-  bisr-logo.png
-.nojekyll
-app.js
-config.js
-index.html
-manifest.webmanifest
-styles.css
-supabase.sql
-supabase_calendar_upgrade.sql
-sw.js
-README.md
-SETUP_GUIDE.md
-CALENDAR_SOURCE.md
-```
-
-7. Commit the files to `main`.
-
-A public repository is the simplest way to use GitHub Pages. The Supabase publishable key is intentionally a browser key and is visible in the site source; database protection must come from Supabase permissions/RLS, not from hiding that key.
+For an existing repository, replace the old V1.2 files with V1.3, commit them, and GitHub Pages will redeploy automatically.
 
 ---
 
-# 6. Turn on GitHub Pages
+# PART E — Clear the old V1.2 screen if your phone still shows it
 
-1. Open the repository **Settings**.
-2. Select **Pages**.
-3. Under **Build and deployment**, choose **Deploy from a branch**.
-4. Branch: `main`.
-5. Folder: `/ (root)`.
-6. Save.
-7. Wait for GitHub to publish the site.
-8. GitHub will display a URL similar to:
+V1.3 uses a new service-worker cache name, so it should update automatically. If an iPhone still shows the previous version:
 
-`https://YOUR-USERNAME.github.io/bisr-dq-school-bus-group/`
+1. Open the GitHub Pages link directly in **Safari** rather than from the Home Screen icon.
+2. Reload the page.
+3. Close Safari and reopen the link once.
+4. If necessary, remove the old Home Screen icon and add it again after the new page is visible.
 
-Open this link on your phone.
-
----
-
-# 7. Test the live shared version before giving it to parents
-
-Use two phones or a phone plus a computer.
-
-1. Open the GitHub Pages URL on both devices.
-2. On device 1 choose Poppy > Morning > YES.
-3. Confirm device 2 updates.
-4. On device 2 change Poppy to NO.
-5. Confirm device 1 updates.
-6. Swipe to **Friday**. Confirm:
-   - the Friday date is grey;
-   - the poll screen is grey;
-   - `No school bus service - Weekend` is shown;
-   - YES/NO cannot be selected.
-7. Swipe to Saturday and repeat.
-8. If a BISR holiday falls inside the available 4-week/1-week window, open it and verify its holiday label.
-9. Add a temporary child in Villa 62 and confirm automatic sorting.
-10. Remove the test child.
+You should see:
+- `La Palma II Parents Group` at the top;
+- both BISR and Azure logos;
+- `Swipe weeks • 4 weeks back • 1 week ahead`;
+- Sunday–Wednesday morning time `06:35`;
+- Thursday morning time `07:25`.
 
 ---
 
-# 8. Give the app to the parent group
+# PART F — Test Live Mode before sending it to parents
 
-Post one permanent message in WhatsApp and pin it:
+Use two different phones, or one phone and one computer.
 
-**BISR DQ SCHOOL BUS GROUP**
+1. Open the same GitHub Pages URL on both devices.
+2. Confirm the bottom status says **Live • all changes saved** rather than Demo Mode.
+3. On device A, select Maria > Morning > YES.
+4. Device B should receive the shared update through Supabase Realtime.
+5. On device B, change Maria > Morning > NO.
+6. Confirm device A updates.
+7. Add a temporary child, for example `Test Child`, Villa `62`.
+8. Confirm the child appears on both devices and is automatically placed between Villa 49 and Villa 75.
+9. Remove the test child.
+10. Check Friday and Saturday remain greyed out and cannot be voted on.
+11. Check a school/public-holiday date; the poll should be disabled and the closure name shown.
 
-Please use the shared bus app to confirm morning and afternoon transport.
-
-- Green YES = travelling
-- Red NO = not travelling
-- Unselected = not yet answered
-- Swipe left/right to change day
-- Friday, Saturday and BISR school holidays are automatically disabled
-
-`PASTE YOUR GITHUB PAGES LINK HERE`
-
-Parents do not need GitHub or Supabase accounts. They only need the link.
+If votes save but do not appear automatically on the other phone, confirm `bus_votes` and `children` are in Supabase's `supabase_realtime` publication. The supplied `supabase.sql` attempts to enable this automatically.
 
 ---
 
-# 9. Add it to each parent's phone like an app
+# PART G — How the week navigation now works
 
-## iPhone
-1. Open the GitHub Pages link in **Safari**.
+- The app defaults to today's Riyadh date.
+- Tap a day tile to move to a specific day within the visible week.
+- Swipe **left** to move to the next week.
+- Swipe **right** to move to the previous week.
+- The left/right arrow buttons also move one week.
+- The app never shows parents more than 28 days before today or 7 days after today.
+- The database is not trimmed to that range; old dates remain stored.
+
+---
+
+# PART H — Give the app to everyone
+
+Once the two-device test works:
+
+1. Copy the GitHub Pages URL.
+2. Send it only in the private parent WhatsApp group.
+3. Pin the message.
+4. Parents do not need GitHub or Supabase accounts.
+5. Each parent opens the same link and votes against their child's row.
+
+### iPhone
+1. Open the URL in Safari.
 2. Tap **Share**.
-3. Tap **Add to Home Screen**.
+3. Select **Add to Home Screen**.
 4. Name it `BISR Bus`.
 5. Tap **Add**.
 
-## Android
-1. Open the link in **Chrome**.
+### Android
+1. Open the URL in Chrome.
 2. Open the browser menu.
 3. Choose **Install app** or **Add to Home screen**.
 
-The icon then opens the PWA in a standalone mobile view.
-
 ---
 
-# 10. Normal parent use
+# Normal daily operation
 
-1. Open `BISR Bus`.
-2. Today's Riyadh date opens automatically.
-3. Select YES or NO for Morning.
-4. Select YES or NO for Afternoon.
-5. Swipe left/right to move exactly one day.
-6. Parents can enter a future day up to seven days ahead.
-7. Historical dates remain visible for 28 days.
-8. Friday/Saturday and school holidays can be viewed but not voted on.
-9. Use **Add new child** when someone joins; the app automatically places them in Villa order.
-10. Use **Remove child** when someone leaves; previous dated records remain intact.
-
----
-
-# 11. Maintaining the school calendar
-
-The owner should check BISR's calendar when a revised academic calendar is published, particularly Eid dates. To change a closure:
-
-1. Open Supabase.
-2. Open **Table Editor > school_closures**.
-3. Edit the start/end date or label.
-4. Save.
-
-The app will pick up the change. No GitHub code edit is required.
-
-For a new academic year:
-1. Add the new academic-year row to `school_years`.
-2. Add the published holiday ranges to `school_closures`.
-3. Leave old years in place so historical days continue to display correctly.
-
----
-
-# Privacy / security note
-
-This version deliberately follows the agreed model: **anyone who has access to the app can vote and add/remove children**. There is no parent login. Because the app contains children's names and Villa numbers, keep the URL inside the private parent group. If you later want stronger control, the appropriate V2 change is invite-only Supabase authentication with an approved parent email list.
-
-
-## V1.2: public holiday name at the top
-On Saudi National Day, Saudi Foundation Day, Eid al-Fitr and Eid al-Adha closure dates, the selected-day screen now shows a prominent **PUBLIC HOLIDAY** banner at the top with the holiday name and **No school • No bus service**.
-
-### If you already installed V1.1
-1. Upload the V1.2 web files to GitHub, replacing the old files.
-2. In Supabase, open **SQL Editor**.
-3. Open `supabase_public_holiday_upgrade.sql` from this package and paste it into a new query.
-4. Click **Run** once.
-5. Reload the GitHub Pages app on your phone.
-
-For a completely new installation, `supabase.sql` already contains the correct public-holiday categories, so no upgrade script is needed.
+- Sunday–Wednesday morning pickup: **06:35**.
+- Thursday morning pickup: **07:25**.
+- Afternoon pickup: **14:10**.
+- YES turns green.
+- NO turns red.
+- Blank means not answered.
+- Friday, Saturday, BISR closures and public holidays are disabled.
+- New children automatically sort by Villa number.
+- All shared votes are written to Supabase.
+- Parent viewing is limited to four weeks back and one week ahead, but the underlying records remain stored.

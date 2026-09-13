@@ -24,8 +24,8 @@ button { touch-action: manipulation; }
 .app-shell { width: min(100%, 520px); min-height: 100dvh; margin: 0 auto; background: linear-gradient(180deg, #ffffff 0%, #f3f6f9 28%, #edf2f6 100%); padding: max(10px, env(safe-area-inset-top)) 12px calc(14px + env(safe-area-inset-bottom)); }
 .brand-header { display: grid; grid-template-columns: 88px 1fr 94px; align-items: center; gap: 8px; padding: 4px 2px 10px; }
 .brand-logo { background: white; border-radius: 16px; height: 72px; display: grid; place-items: center; overflow: hidden; }
-.bisr-wrap img { width: 104px; height: 98px; object-fit: contain; transform: scale(1.15); }
-.azure-wrap img { width: 90px; height: 54px; object-fit: contain; }
+.bisr-wrap img { width: 82px; height: 66px; object-fit: contain; }
+.azure-wrap img { width: 90px; height: auto; object-fit: contain; border-radius: 4px; }
 .brand-copy { min-width: 0; text-align: center; }
 .eyebrow { font-size: 9px; font-weight: 900; letter-spacing: 1.25px; color: var(--bisr-blue); text-transform: uppercase; }
 .brand-copy h1 { margin: 4px 0 0; font-size: 18px; line-height: 1.05; color: var(--bisr-navy); letter-spacing: -0.45px; }
@@ -97,8 +97,8 @@ dialog input:focus, dialog select:focus { border-color: #7c9cba; box-shadow: 0 0
   .app-shell { padding-left: 8px; padding-right: 8px; }
   .brand-header { grid-template-columns: 72px 1fr 75px; gap: 4px; }
   .brand-logo { height: 62px; }
-  .bisr-wrap img { width: 90px; height: 86px; }
-  .azure-wrap img { width: 75px; }
+  .bisr-wrap img { width: 68px; height: 56px; }
+  .azure-wrap img { width: 72px; }
   .brand-copy h1 { font-size: 15px; }
   .eyebrow { font-size: 8px; }
   .week-strip { gap: 3px; }

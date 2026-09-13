@@ -1,5 +1,6 @@
--- BISR DQ School Bus Group - Supabase V1.1
+-- BISR DQ School Bus Group - Supabase V1.3
 -- Fresh install: run this entire script once in Supabase > SQL Editor.
+-- bus_votes has NO 4-week retention rule: historic votes remain stored indefinitely; the app only limits what parents can view.
 -- Calendar source: BISR Diplomatic Quarter Academic Calendar 2026-2027, updated April 2026.
 
 create extension if not exists pgcrypto;
@@ -212,6 +213,8 @@ drop policy if exists "school closures readable" on public.school_closures;
 create policy "school closures readable" on public.school_closures for select to anon, authenticated using (true);
 
 revoke execute on function public.set_bus_vote(date, uuid, text, boolean) from public;
+revoke execute on function public.add_bus_child(text, integer, date) from public;
+revoke execute on function public.remove_bus_child(uuid, date) from public;
 grant execute on function public.set_bus_vote(date, uuid, text, boolean) to anon, authenticated;
 grant execute on function public.add_bus_child(text, integer, date) to anon, authenticated;
 grant execute on function public.remove_bus_child(uuid, date) to anon, authenticated;

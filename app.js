@@ -1,6 +1,6 @@
 (() => {
   const CONFIG = window.BUS_APP_CONFIG || {};
-  const DEMO_KEY = 'bisr_dq_bus_group_v1_1_demo';
+  const DEMO_KEY = 'bisr_dq_bus_group_v1_3_demo';
   const DEFAULT_CHILDREN = [
     { id: '11111111-1111-4111-8111-111111111111', name: 'Maria Alejandra', villa_number: 49, active_from: '2026-01-01', active_until: null },
     { id: '22222222-2222-4222-8222-222222222222', name: 'Nicolas Cortes', villa_number: 49, active_from: '2026-01-01', active_until: null },
@@ -46,6 +46,12 @@
   const formatMon = s => new Intl.DateTimeFormat('en-GB', { month:'short', timeZone:'UTC' }).format(toDate(s)).toUpperCase();
   const dayNumber = s => Number(s.slice(8,10));
   const startSunday = s => addDays(s, -toDate(s).getUTCDay());
+  const morningPickupTime = s => {
+    const dow = toDate(s).getUTCDay();
+    if (dow >= 0 && dow <= 3) return CONFIG.MORNING_TIME_SUN_WED || '06:35';
+    if (dow === 4) return CONFIG.MORNING_TIME_THURSDAY || '07:25';
+    return CONFIG.MORNING_TIME_SUN_WED || '06:35';
+  };
   const safe = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   const today = riyadhToday();
@@ -169,6 +175,8 @@
   function renderDate() {
     const info = schoolDayInfo(selectedDate);
     $('fullDate').textContent = formatLong(selectedDate);
+    $('morningTime').textContent = morningPickupTime(selectedDate);
+    $('afternoonTime').textContent = CONFIG.AFTERNOON_TIME || '14:10';
     $('dateStatus').textContent = info.closed
       ? (info.type === 'weekend' ? 'WEEKEND' : info.type === 'out-of-term' ? 'NO SCHOOL' : info.type === 'public-holiday' ? 'PUBLIC HOLIDAY' : 'SCHOOL HOLIDAY')
       : selectedDate === today ? 'TODAY' : selectedDate === addDays(today,1) ? 'TOMORROW' : 'BUS DAY';
@@ -194,8 +202,8 @@
       if (allowed) b.onclick = () => { selectedDate = d; render(); };
       strip.appendChild(b);
     }
-    $('prevDay').disabled = compareDate(addDays(selectedDate,-1), minDate) < 0;
-    $('nextDay').disabled = compareDate(addDays(selectedDate,1), maxDate) > 0;
+    $('prevWeek').disabled = !canShiftWeek(-1);
+    $('nextWeek').disabled = !canShiftWeek(1);
   }
 
   function renderChildren() {
@@ -355,15 +363,25 @@
       .subscribe();
   }
 
-  function shiftDay(n) {
-    const candidate = addDays(selectedDate, n);
-    if (compareDate(candidate,minDate)<0 || compareDate(candidate,maxDate)>0) return;
+  function canShiftWeek(n) {
+    const targetStart = addDays(startSunday(selectedDate), n * 7);
+    const targetEnd = addDays(targetStart, 6);
+    return compareDate(targetEnd, minDate) >= 0 && compareDate(targetStart, maxDate) <= 0;
+  }
+
+  function shiftWeek(n) {
+    if (!canShiftWeek(n)) return;
+    const currentDow = toDate(selectedDate).getUTCDay();
+    const targetStart = addDays(startSunday(selectedDate), n * 7);
+    let candidate = addDays(targetStart, currentDow);
+    if (compareDate(candidate, minDate) < 0) candidate = minDate;
+    if (compareDate(candidate, maxDate) > 0) candidate = maxDate;
     selectedDate = candidate;
     render();
   }
 
-  $('prevDay').onclick = () => shiftDay(-1);
-  $('nextDay').onclick = () => shiftDay(1);
+  $('prevWeek').onclick = () => shiftWeek(-1);
+  $('nextWeek').onclick = () => shiftWeek(1);
   $('addChildBtn').onclick = () => { $('childName').value=''; $('villaNumber').value=''; $('addDialog').showModal(); setTimeout(()=>$('childName').focus(),100); };
   $('removeChildBtn').onclick = () => { renderRemoveOptions(); $('removeDialog').showModal(); };
   $('confirmAdd').onclick = addChild;
@@ -375,7 +393,7 @@
     if (touchStartX === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX;
     touchStartX = null;
-    if (Math.abs(dx) > 55) shiftDay(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > 55) shiftWeek(dx < 0 ? 1 : -1);
   }, { passive:true });
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
