@@ -1,6 +1,6 @@
 (() => {
   const CONFIG = window.BUS_APP_CONFIG || {};
-  const DEMO_KEY = 'bisr_dq_bus_group_v1_3_demo';
+  const DEMO_KEY = 'bisr_dq_bus_group_v1_4_demo';
   const DEFAULT_CHILDREN = [
     { id: '11111111-1111-4111-8111-111111111111', name: 'Maria Alejandra', villa_number: 49, active_from: '2026-01-01', active_until: null },
     { id: '22222222-2222-4222-8222-222222222222', name: 'Nicolas Cortes', villa_number: 49, active_from: '2026-01-01', active_until: null },
@@ -54,9 +54,17 @@
   };
   const safe = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  const today = riyadhToday();
-  const minDate = addDays(today, -(CONFIG.PAST_DAYS ?? 28));
-  const maxDate = addDays(today, CONFIG.FUTURE_DAYS ?? 7);
+  const viewWindowFor = baseToday => {
+    // Week-based navigation: four complete prior weeks + current week + one complete next week.
+    const currentWeekStart = startSunday(baseToday);
+    return {
+      minDate: addDays(currentWeekStart, -(CONFIG.PAST_DAYS ?? 28)),
+      maxDate: addDays(currentWeekStart, 6 + (CONFIG.FUTURE_DAYS ?? 7))
+    };
+  };
+
+  let today = riyadhToday();
+  let { minDate, maxDate } = viewWindowFor(today);
   let selectedDate = today;
   let children = [];
   let votes = new Map();
@@ -64,6 +72,24 @@
   let schoolYears = structuredClone(DEFAULT_SCHOOL_YEARS);
   let realtimeChannel = null;
   let saving = false;
+  let refreshInFlight = false;
+  let lastForegroundRefresh = 0;
+
+  function refreshDateWindow() {
+    const latestToday = riyadhToday();
+    if (latestToday === today) return false;
+
+    const previousToday = today;
+    const wasShowingToday = selectedDate === previousToday;
+    today = latestToday;
+    ({ minDate, maxDate } = viewWindowFor(today));
+
+    // If the app was left open overnight on yesterday's 'today', move naturally to the new current day.
+    if (wasShowingToday) selectedDate = today;
+    if (compareDate(selectedDate, minDate) < 0) selectedDate = minDate;
+    if (compareDate(selectedDate, maxDate) > 0) selectedDate = maxDate;
+    return true;
+  }
 
   function demoState() {
     try {
@@ -151,6 +177,59 @@
     render();
     status('Live • all changes saved', 'live');
     subscribeRealtime();
+  }
+
+  async function refreshSharedData({ silent = true, includeCalendar = false } = {}) {
+    const dateRolled = refreshDateWindow();
+
+    if (demoMode) {
+      if (dateRolled) render();
+      return;
+    }
+    if (!sb || refreshInFlight || saving) return;
+
+    refreshInFlight = true;
+    if (!silent) status('Refreshing shared bus board…', 'saving');
+
+    try {
+      const queries = [
+        sb.from('children').select('*').order('villa_number', { ascending:true }).order('name', { ascending:true }),
+        sb.from('bus_votes').select('*').gte('service_date', minDate).lte('service_date', maxDate)
+      ];
+      if (includeCalendar) {
+        queries.push(
+          sb.from('school_closures').select('*').order('start_date', { ascending:true }),
+          sb.from('school_years').select('*').order('start_date', { ascending:true })
+        );
+      }
+
+      const results = await Promise.all(queries);
+      const childRes = results[0];
+      const voteRes = results[1];
+
+      if (childRes.error || voteRes.error) throw childRes.error || voteRes.error;
+
+      children = childRes.data || [];
+      const latestVotes = new Map();
+      (voteRes.data || []).forEach(v => latestVotes.set(`${v.service_date}|${v.child_id}`, v));
+      votes = latestVotes;
+
+      if (includeCalendar) {
+        const closureRes = results[2];
+        const yearRes = results[3];
+        if (!closureRes.error && closureRes.data?.length) closures = closureRes.data;
+        if (!yearRes.error && yearRes.data?.length) schoolYears = yearRes.data;
+      }
+
+      render();
+      status('Live • all changes saved', 'live');
+      subscribeRealtime();
+    } catch (error) {
+      console.warn('Automatic refresh failed; retaining last known shared data.', error);
+      status('Sync delayed • retrying automatically', 'error');
+    } finally {
+      refreshInFlight = false;
+    }
   }
 
   function loadDemoVotes(state) {
@@ -395,6 +474,27 @@
     touchStartX = null;
     if (Math.abs(dx) > 55) shiftWeek(dx < 0 ? 1 : -1);
   }, { passive:true });
+
+  function foregroundRefresh() {
+    if (document.visibilityState !== 'visible') return;
+    const now = Date.now();
+    // visibilitychange and focus can fire together; one refresh is enough.
+    if (now - lastForegroundRefresh < 1500) return;
+    lastForegroundRefresh = now;
+    refreshSharedData({ silent:true, includeCalendar:true });
+  }
+
+  // Reconcile with Supabase every 30 seconds while the app is actually visible.
+  // Realtime remains active; this periodic pull is a safety net for suspended/mobile browser sessions.
+  setInterval(() => {
+    if (document.visibilityState === 'visible') refreshSharedData({ silent:true });
+  }, 30000);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') foregroundRefresh();
+  });
+  window.addEventListener('focus', foregroundRefresh);
+  window.addEventListener('online', foregroundRefresh);
 
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
   loadData();
